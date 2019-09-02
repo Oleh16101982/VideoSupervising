@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2006.12.08 15:24:51.983.pas,C:\Documents and Settings\Baranov.BANK_NT\Мои документы\Borland Studio Projects\Unit1.pas=D:\Project\Video\20061221\Unit1.pas</Transaction>
+    <Transaction>2006.12.08 15:24:51.999.dfm,C:\Documents and Settings\Baranov.BANK_NT\Мои документы\Borland Studio Projects\Unit1.dfm=D:\Project\Video\20061221\Unit1.dfm</Transaction>
+    <Transaction>2006.12.08 15:24:58.546.bdsproj,C:\Documents and Settings\Baranov.BANK_NT\Мои документы\Borland Studio Projects\Project1.bdsproj=D:\Project\Video\20061221\Video.bdsproj</Transaction>
+    <Transaction>2006.12.08 15:49:54.074.pas,D:\Project\Video\20061221\Unit2.pas=D:\Project\Video\20061221\uUtils.pas</Transaction>
+    <Transaction>2006.12.11 14:23:49.786.pas,D:\Project\Video\20061221\Unit2.pas=D:\Project\Video\20061221\ufrmSettings.pas</Transaction>
+    <Transaction>2006.12.11 14:23:49.802.dfm,D:\Project\Video\20061221\Unit2.dfm=D:\Project\Video\20061221\ufrmSettings.dfm</Transaction>
+    <Transaction>2006.12.11 15:36:10.339.pas,D:\Project\Video\20061221\ufrmSettings.pas=</Transaction>
+    <Transaction>2006.12.11 15:36:10.339.dfm,D:\Project\Video\20061221\ufrmSettings.dfm=</Transaction>
+    <Transaction>2006.12.11 15:56:47.165.pas,D:\Project\Video\20061221\Unit2.pas=D:\Project\Video\20061221\ufrmSettings.pas</Transaction>
+    <Transaction>2006.12.11 15:56:47.181.dfm,D:\Project\Video\20061221\Unit2.dfm=D:\Project\Video\20061221\ufrmSettings.dfm</Transaction>
+    <Transaction>2006.12.19 12:45:01.745.pas,D:\Project\Video\20061221\ufrmSettings.pas=</Transaction>
+    <Transaction>2006.12.19 12:45:01.745.dfm,D:\Project\Video\20061221\ufrmSettings.dfm=</Transaction>
+  </Transactions>
+</BorlandProject>

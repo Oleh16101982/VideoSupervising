@@ -1,0 +1,23 @@
+ Том в устройстве U имеет метку Disk D
+ Серийный номер тома: 609C-76EB
+
+ Содержимое папки U:\Project\VideoSecurity\20090202
+
+02.02.2009  19:01    <DIR>          .
+02.02.2009  19:01    <DIR>          ..
+02.02.2009  19:01                40 1.txt
+21.01.2009  14:42             5,595 clLogAcceptor1.dcu
+18.05.2007  16:02             2,745 clLogAcceptor1.pas
+31.01.2009  18:08             9,772 clThServer.dcu
+31.01.2009  18:08             7,683 clThServer.pas
+31.01.2009  18:11             7,078 MainUnit.dcu
+29.01.2009  17:20             1,924 MainUnit.dfm
+31.01.2009  18:11             2,447 MainUnit.pas
+21.01.2009  14:38               274 VideoViewer.dpr
+29.01.2009  21:29             4,823 VideoViewer.dproj
+29.01.2009  21:29               922 VideoViewer.dproj.local
+31.01.2009  18:11           823,808 VideoViewer.exe
+31.01.2009  18:48               222 VideoViewer.identcache
+21.01.2009  14:34             5,280 VideoViewer.res
+              14 файлов        872,613 байт
+               2 папок  29,222,334,464 байт свободно

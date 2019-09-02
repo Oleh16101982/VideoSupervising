@@ -1,0 +1,74 @@
+object Form2: TForm2
+  Left = 0
+  Top = 0
+  Caption = 'Form2'
+  ClientHeight = 570
+  ClientWidth = 716
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  OnCreate = FormCreate
+  PixelsPerInch = 96
+  TextHeight = 13
+  object I1: TImage
+    Left = 89
+    Top = 8
+    Width = 280
+    Height = 273
+    Stretch = True
+  end
+  object I2: TImage
+    Left = 375
+    Top = 8
+    Width = 314
+    Height = 273
+  end
+  object I3: TImage
+    Left = 89
+    Top = 287
+    Width = 280
+    Height = 178
+  end
+  object I4: TImage
+    Left = 375
+    Top = 287
+    Width = 314
+    Height = 178
+  end
+  object Button1: TButton
+    Left = 8
+    Top = 8
+    Width = 75
+    Height = 25
+    Caption = 'Start'
+    TabOrder = 0
+  end
+  object Button2: TButton
+    Left = 8
+    Top = 39
+    Width = 75
+    Height = 25
+    Caption = 'Pause'
+    TabOrder = 1
+  end
+  object Button3: TButton
+    Left = 8
+    Top = 70
+    Width = 75
+    Height = 25
+    Caption = 'Terminate'
+    TabOrder = 2
+  end
+  object M1: TMemo
+    Left = 1
+    Top = 496
+    Width = 707
+    Height = 75
+    ScrollBars = ssBoth
+    TabOrder = 3
+  end
+end

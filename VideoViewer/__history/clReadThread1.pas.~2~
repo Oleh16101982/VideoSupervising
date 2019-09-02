@@ -1,0 +1,415 @@
+unit clReadThread1;
+
+interface
+uses
+	Windows , StrUtils , Classes , SysUtils , clLogAcceptor1;
+
+type
+	TOnReadInfo				= procedure (Sender : TObject ; Info : PChar) of Object;
+  TOnSnapShot				= procedure (Sender : TObject ; TypeEvent : Integer ; strMsg : String) of object;
+
+type
+	TReadThread = class(TThread)
+  	private
+    	fLog : TLogAcceptor;
+      fIsInit : boolean;
+      fFilePath		: String;
+      fFlMask			: String;
+      fFlName 		: String;
+      fPrevFlSize	: Cardinal;
+      fPrevFlName	: String;
+      fFlSize			: Cardinal;
+      fFlDate			: TDateTime;
+      fOffset			: Cardinal;
+      fFlInfo 		: PChar;
+      fStrFlInfo	: String;
+      fIsDuet			: boolean;
+      fIsIps			: boolean;
+      fPAN				: String;
+      fGrafString	: String;
+
+
+      fOnReadInfo : TOnReadInfo;
+      fOnSnapShot : TOnSnapShot;
+
+      function fDefFileRead : boolean;
+      procedure fDefFileName;
+      procedure fCheckSize;
+      procedure fReadInfo;
+      procedure fParseString;
+      procedure fCreateString(Txt : String ; NumCard : String);
+    public
+    	constructor Create(IsSuspend : boolean ; IsLog : Boolean);
+      destructor Destroy;
+      procedure Terminate;
+      procedure Execute; override;
+      procedure Init  ;
+
+      property FilePath	: String read fFilePath write fFilePath; 
+      property FlMask : String read fFlMask write fFlMask;
+      property FlName : String read fFlName write fFlName;
+      property FlSize	: Cardinal read fFlSize write fFlSize;
+      property FlDate : TDateTime read fFlDate write fFlDate;
+      property PrevFlSize : Cardinal read fPrevFlSize write fPrevFlSize;
+
+      property OnReadInfo : TOnReadInfo read fOnReadInfo write fOnReadInfo;
+      property OnSnapShot : TOnSnapShot read fOnSnapShot write fOnSnapShot;
+  end;
+implementation
+
+{ TReadThread }
+
+constructor TReadThread.Create(IsSuspend, IsLog: Boolean);
+begin
+  inherited Create(IsSuspend);
+  if IsLog then fLog := TLogAcceptor.Create('readThread');
+  fIsInit := false;
+  fPrevFlSize := 0;
+  fFlSize := 0;
+  fPrevFlName := '';
+  fPAN := '';
+  fIsDuet := false;
+  fIsIps := false;
+  fGrafString := '';
+if Assigned(fLog) then fLog.Write('In Create');
+end;
+
+destructor TReadThread.Destroy;
+begin
+	if Assigned(fLog) then fLog.Free;
+  inherited Destroy;
+end;
+
+procedure TReadThread.Execute;
+begin
+  inherited;
+if Assigned(fLog) then fLog.Write('In Execute');
+//	if fIsInit then
+//  	begin
+//if Assigned(fLog) then fLog.Write('In Is Init');
+    	fDefFileName;
+		  if fDefFileRead then
+    	  begin
+      	  if fPrevFlSize = 0 then
+        	  begin
+	            fPrevFlSize := fFlSize;
+              fOffset := fPrevFlSize;
+            end;
+        end;
+      while not Terminated do
+      	begin
+        	fDefFileName;
+// if Assigned(fLog) then flog.Write('after fdeffilename. ' + fFlName);
+          if fDefFileRead then
+        	  begin
+             fCheckSize;
+            end;
+      	  sleep(166);
+        end;
+//    end;
+end;
+
+procedure TReadThread.fCheckSize;
+begin
+  if fFlSize > fPrevFlSize then
+  	begin
+     fOffset := fPrevFlSize;
+     fPrevFlSize := fFlSize;
+		 fReadInfo;
+    end;
+end;
+
+procedure TReadThread.fCreateString(Txt : String ; NumCard : String);
+begin
+	fGrafString := DateTimeToStr(now) + ' ' + Txt + ' ' + NumCard;
+end;
+
+procedure TReadThread.fDefFileName;
+var
+	yy , mm , dd : Word;
+  syy , smm , sdd : String;
+
+begin
+	DecodeDate(Now , yy , mm , dd);
+  syy := IntToStr(yy);
+  smm := IntToStr(mm);
+  if mm < 10 then smm := '0' + smm;
+  sdd := IntToStr(dd);
+  if dd < 10 then sdd := '0' + sdd;
+//  fFlName := 'C:\Protopas\' + syy + smm + sdd + '.jrn';
+  fFlName := 'X:\Journal\' + syy + smm + sdd + '.jrn';
+  if fPrevFlName <> fFlName then
+  	begin
+	    fFlSize := 0;
+      fPrevFlName := fFlName; 
+    end;
+end;
+
+function TReadThread.fDefFileRead;
+var
+	sr : TSearchRec;
+begin
+// if Assigned(fLog) then fLog.Write('In fDefFileRead. filename - ' + fFlName);
+  if FindFirst(fFlName , faAnyFile , sr) = 0 then
+  	begin
+// if Assigned(fLog) then fLog.Write('In fDefFileRead. Find File');
+			fFlSize := sr.Size;
+      fFlDate := FileDateToDateTime(sr.Time);
+// if Assigned(fLog) then fLog.Write('In fDefFileRead. File Size - ' + IntToStr(fFlSize) + '. Date - ' + DateTimeToStr(fFlDate));
+			Result := true;
+    end
+  else
+		Result := false;
+end;
+
+procedure TReadThread.fParseString;
+var
+i : Integer;
+
+ChStr : String;
+begin
+if Assigned(fLog) then fLog.Write('Parse String - ' + fstrFlInfo);
+
+	if PosEx('-> НАЧАЛО ТРАНЗАКЦИИ', fstrFlInfo , 1) <> 0  	then
+  	begin
+// if Assigned(fLog) then fLog.Write('In Event 1 -> НАЧАЛО ТРАНЗАКЦИИ');
+    	fIsDuet	:= false;
+      fPan := '';
+      fIsIps	:= true;
+      fCreateString('Карта вставлена' , fPAN);
+      fOnSnapShot(self , 1 , fGrafString);
+    end;
+
+	if PosEx('Track 2 data:' , fstrFlInfo , 1) <> 0  	then
+  	begin
+      fPan := Trim(Copy(fstrFlInfo , PosEx('Track 2 data:' , fstrFlInfo , 1) + Length('Track 2 data:') + 1, 16));
+      fCreateString('Чтение карты' , fPAN);
+      fOnSnapShot(self , 2 , fGrafString);
+    end;
+
+	if PosEx('PIN entered' , fstrFlInfo , 1) <> 0  	then
+  	begin
+      fCreateString('Ввод PIN' , fPAN);
+      fOnSnapShot(self , 3 , fGrafString);
+    end;
+
+	if PosEx('Transaction request DD' , fstrFlInfo , 1) <> 0  	then
+  	begin
+      fCreateString('Transaction request DD' , fPAN);
+      fOnSnapShot(self , 4 , fGrafString);
+    end;
+	if ((PosEx('Amount'  , fstrFlInfo , 1) <> 0) and (PosEx('entered'  , fstrFlInfo , 1) <> 0))  	then
+  	begin
+      fCreateString('Ввод суммы' , fPAN);
+      fOnSnapShot(self , 5 , fGrafString);
+    end;
+	if PosEx('Transaction request CD' , fstrFlInfo , 1) <> 0  	then
+  	begin
+      fCreateString('Transaction request CD' , fPAN);
+      fOnSnapShot(self , 6 , fGrafString);
+    end;
+	if ((PosEx('Cash'  , fstrFlInfo , 1) <> 0) and (PosEx('dispensed'  , fstrFlInfo , 1) <> 0)) then
+  	begin
+      fCreateString('Деньги набраны' , fPAN);
+      fOnSnapShot(self , 7 , fGrafString);
+    end;
+	if PosEx('Cash presented' , fstrFlInfo , 1) <> 0  	then
+  	begin
+      fCreateString('Деньги выданы' , fPAN);
+      fOnSnapShot(self , 8 , fGrafString);
+    end;
+	if PosEx('Cash taken' , fstrFlInfo , 1) <> 0  	then
+  	begin
+      fCreateString('Деньги получены' , fPAN);
+      fOnSnapShot(self , 9 , fGrafString);
+    end;
+	if PosEx('VYDANO' , fstrFlInfo , 1) <> 0  	then
+  	begin
+      fCreateString('Печать чека'  , fPAN);
+      fOnSnapShot(self , 10 , fGrafString);
+    end;
+	if ((PosEx('Card'  , fstrFlInfo , 1) <> 0) and (PosEx('taken'  , fstrFlInfo , 1) <> 0)) then
+  	begin
+      fCreateString('Карта выдана' , fPAN);
+      fOnSnapShot(self , 11 , fGrafString);
+    end;
+	if PosEx('<- КОНЕЦ ТРАНЗАКЦИИ' , fstrFlInfo , 1) <> 0  	then
+  	begin
+      fCreateString('Конец транзакции' , fPAN);
+      fIsIPS := false;
+      fIsDuet := false;
+      fPAN := '';
+      fOnSnapShot(self , 12 , fGrafString);
+    end;
+///////////////////////////////////////////////////////////////////////////////
+/// ///////////////////////////////////////////////////////////////////////////
+///
+///					DUET MESSAGE PARSING
+///
+///////////////////////////////////////////////////////////////////////////////
+/// ///////////////////////////////////////////////////////////////////////////
+
+	if PosEx('НАЧАЛО ОПЕРАЦИИ С КАРТОЙ' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fPan := '';
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Карта МТ-КАРТ вставлена' , fPAN);
+      fOnSnapShot(self , 13 , fGrafString);
+    end;
+{
+	if PosEx('ВСТАВЛЕНА КЛИЕНТСКАЯ КАРТА' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Insert Client Card' , fPAN);
+      fOnSnapShot(self , 14 , fGrafString);
+    end;
+}
+	if ((PosEx('MK:' , fstrFlInfo , 1) <> 0)  and	(PosEx('USN' , fstrFlInfo , 1) <> 0)) then
+  	begin
+      fPan := Trim(Copy(fstrFlInfo , PosEx('MK:' , fstrFlInfo , 1) + Length('MK:') + 1 , 22));
+      fCreateString('Чтение карты' , fPAN);
+      fOnSnapShot(self , 15 , fGrafString);
+    end;
+
+	if PosEx('ОПЕРАЦИЯ: БАЛАНС КАРТЫ' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Операция БАЛАНС КАРТЫ' , fPAN);
+      fOnSnapShot(self , 16 , fGrafString);
+    end;
+
+	if PosEx('ОПЕРАЦИЯ: БАЛАНС СЧЕТА' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Операция БАЛАНС СЧЕТА' , fPAN);
+      fOnSnapShot(self , 17 , fGrafString);
+    end;
+
+	if PosEx('ОТДАЕМ КАРТУ КЛИЕНТУ' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Карта выдана' , fPAN);
+      fOnSnapShot(self , 18 , fGrafString);
+    end;
+
+	if PosEx('КАРТА ВЫДАНА' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Карта взята' , fPAN);
+      fOnSnapShot(self , 19 ,fGrafString);
+    end;
+
+	if PosEx('ЗАВЕРШЕНИЕ ОПЕРАЦИИ С КАРТОЙ' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Конец транзакции МТ-КАРТ' , fPAN);
+      fOnSnapShot(self , 20 , fGrafString);
+    end;
+
+	if PosEx('ДЕНЬГИ ВЫДАНЫ КЛИЕНТУ' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Деньги забраны' , fPAN);
+      fOnSnapShot(self , 21 , fGrafString);
+    end;
+	if PosEx('ВЫДАНО:' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Деньги выданы' , fPAN);
+      fOnSnapShot(self , 22 , fGrafString);
+    end;
+	if PosEx('НАБРАНО' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Деньги набраны' , fPAN);
+      fOnSnapShot(self , 23 ,fGrafString);
+    end;
+	if PosEx('РЕДЖЕКТ' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Reject' , fPAN);
+      fOnSnapShot(self , 24 , fGrafString);
+    end;
+	if PosEx('ОШИБКА ПРИ ПРОВЕДЕНИИ ТРАНЗАКЦИИ' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Ошибка во время транзакции' , fPAN);
+      fOnSnapShot(self , 25 , fGrafString);
+    end;
+	if PosEx('ОШИБКА ТРАНЗАКЦИИ' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Ошибка транзакции' , fPAN);
+      fOnSnapShot(self , 26 , fGrafString);
+    end;
+	if ((PosEx('НАЧАЛО ТРАНЗАКЦИИ' , fstrFlInfo , 1) <> 0) and (PosEx('->' , fstrFlInfo , 1) = 0)) 	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Начало транзакции МТ-КАРТ' , fPAN);
+      fOnSnapShot(self , 27 , fGrafString);
+    end;
+	if PosEx('ОПЕРАЦИЯ: ВЫДАЧА НАЛ. С ЗАК. СЧЕТА' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Операция ВЫДАЧА НАЛИЧНЫХ' , fPAN);
+      fOnSnapShot(self , 29 , fGrafString);
+    end;
+	if PosEx('ОПЕРАЦИЯ: ПОПОЛНЕНИЕ' , fstrFlInfo , 1) <> 0  	then
+  	begin
+    	fIsDuet	:= true;
+      fIsIps	:= false;
+      fCreateString('Операция ЗАГРУЗКА СРЕДСТВ' , fPAN);
+      fOnSnapShot(self , 30 , fGrafString);
+    end;
+
+end;
+
+procedure TReadThread.fReadInfo;
+var
+	hndl : THandle;
+  offs : Integer;
+  iBytesRead: Integer;
+//  fFlInfo : PChar;
+begin
+  hndl := FileOpen(fFlName , fmShareDenyNone);
+  offs := FileSeek(hndl , fOffset , 0);
+	fFlInfo := PChar(AllocMem(fFlSize - fOffset + 1));
+  iBytesRead := FileRead(hndl, fFlInfo^, fFlSize - fOffset);
+if Assigned(fLog) then fLog.Write('Read Bytes - ' + IntToStr(iBytesRead));
+ 
+  FileClose(hndl);
+	if Assigned(fLog) then fLog.Write(fFlInfo);
+  fOnReadInfo(self , fFlInfo);
+  fstrFlInfo := fFlInfo;
+  if iBytesRead > 0 then
+  	begin
+     fParseString;
+    end;
+end;
+
+procedure TReadThread.Init;
+begin
+  fIsInit := true;
+end;
+
+procedure TReadThread.Terminate;
+begin
+inherited;
+end;
+
+end.
